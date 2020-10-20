@@ -52,10 +52,9 @@ public class OrderController {
     //상품 목록
     @SuppressWarnings({ "unchecked", "rawtypes", "unused" })
     public void productList() {
-        ExHashMap paramMap = new ExHashMap();
         
         try {
-            ExHashMap result = orderService.selectProductList(paramMap);
+            ExHashMap result = orderService.selectProductList();
             List<String> productList = (List) result.get("list");
 
             System.out.println("상품번호       상품명           판매가격        재고수");

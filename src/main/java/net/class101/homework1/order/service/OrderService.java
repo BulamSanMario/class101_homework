@@ -6,7 +6,7 @@ import net.class101.homework1.common.util.ExHashMap;
 
 @Service
 public interface OrderService {
-    public ExHashMap selectProductList(ExHashMap paramMap) throws Exception;
+    public ExHashMap selectProductList() throws Exception;
     
     public ExHashMap selectProductInfo(ExHashMap paramMap) throws Exception;
     

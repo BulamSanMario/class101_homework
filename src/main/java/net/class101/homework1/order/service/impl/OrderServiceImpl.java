@@ -22,11 +22,11 @@ public class OrderServiceImpl implements OrderService {
     
     //상품 목록
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public ExHashMap selectProductList(ExHashMap paramMap) throws Exception {
+    public ExHashMap selectProductList() throws Exception {
         ExHashMap result = new ExHashMap();
         List resultList = new ArrayList();
         
-        List list = commonMapper.getList(paramMap, "Order.selectProductList");
+        List list = commonMapper.getList(new ExHashMap(), "Order.selectProductList");
         
         //상품 정보 조합
         for (Object item : list) {
