@@ -9,4 +9,6 @@ public interface OrderService {
     public ExHashMap selectProductList(ExHashMap paramMap) throws Exception;
     
     public ExHashMap selectProductInfo(ExHashMap paramMap) throws Exception;
+    
+    public int updateProductQty(ExHashMap paramMap) throws Exception;
 }

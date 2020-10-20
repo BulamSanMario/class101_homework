@@ -6,7 +6,9 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import net.class101.homework1.common.exception.SoldOutException;
 import net.class101.homework1.common.mapper.CommonMapper;
 import net.class101.homework1.common.util.Const;
 import net.class101.homework1.common.util.ExHashMap;
@@ -18,7 +20,7 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     CommonMapper commonMapper;
     
-    //상품 목록 리스트
+    //상품 목록
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public ExHashMap selectProductList(ExHashMap paramMap) throws Exception {
         ExHashMap result = new ExHashMap();
@@ -63,5 +65,25 @@ public class OrderServiceImpl implements OrderService {
         }
         
         return result;
+    }
+    
+    @Transactional
+    public int updateProductQty(ExHashMap paramMap) throws Exception {
+        
+        for (String key : paramMap.keySet()) {
+            ExHashMap productMap = paramMap.getMap(key);
+            
+            //클래스의 경우 재고가 없음
+            if (productMap.getString("gbn").equals(Const.PRODUCT_TYPE.KIT.name())) {
+                commonMapper.update(productMap, "Order.updateProductQty"); 
+                int afterQty = (int) commonMapper.get(productMap, "Order.selectProductQty"); 
+               
+                if(afterQty < 0) {
+                    throw new SoldOutException("재고가 부족합니다.");
+                }
+            }
+        }
+        
+        return Const.ERROR_CODE.SUCCESS;
     }
 }

@@ -27,6 +27,7 @@ public class OrderController {
     
     //주문 대기
     public void initOrder() {
+        cartList.init();
         
         System.out.print("입력(o[order]: 주문, q[quit]: 종료): ");
         inputValue = sc.next();
@@ -34,7 +35,6 @@ public class OrderController {
         switch (inputValue) {
         case "o": case "O":
             productList();
-            selectProduct();
             break;
             
         case "q": case "Q":
@@ -63,7 +63,8 @@ public class OrderController {
             for (String item : productList) {
                 System.out.println(item);
             }
-
+            
+            sc.nextLine();
             selectProduct();
             
         } catch (Exception e) {
@@ -79,34 +80,42 @@ public class OrderController {
         
         try {
             System.out.print("상품번호 : ");
+            inputValue = sc.nextLine();
             
-            inputValue = sc.next();
+            if (StringUtil.isEmptyString(inputValue)) {
+                //결제
+                payment();
+                
+            } else {
             
-            //상품번호 숫자 체크
-            if(!StringUtil.isNumeric(inputValue)) {
-                System.out.println("상품번호를 다시 입력해 주세요.");
-            }
-            
-            paramMap.put("num", inputValue);
-            resultMap = orderService.selectProductInfo(paramMap);
-            resultCode = resultMap.getInt("resultCode");
-            
-            //입력한 상품 확인
-            switch (resultCode) {
-                case Const.ERROR_CODE.NOT_EXIST_PRODUCT:
-                    System.out.println("입력하신 상품번호의 상품이 없습니다. 다시 입력해 주세요.");
+                //상품번호 숫자 체크
+                if(!StringUtil.isNumeric(inputValue)) {
+                    System.out.println("상품번호를 다시 입력해 주세요.");
                     selectProduct();
+                } else {
+                
+                    paramMap.put("num", inputValue);
+                    resultMap = orderService.selectProductInfo(paramMap);
+                    resultCode = resultMap.getInt("resultCode");
                     
-                    break;
+                    //입력한 상품 확인
+                    switch (resultCode) {
+                        case Const.ERROR_CODE.NOT_EXIST_PRODUCT:
+                            System.out.println("입력하신 상품번호의 상품이 없습니다. 다시 입력해 주세요.");
+                            selectProduct();
+                            
+                            break;
+                            
+                        case Const.ERROR_CODE.NOT_EXIST_QTY:
+                            System.out.println("해당 상품 재고가 없습니다. 다시 입력해 주세요.");
+                            selectProduct();
+                            
+                            break;
+                    }
                     
-                case Const.ERROR_CODE.NOT_EXIST_QTY:
-                    System.out.println("해당 상품 재고가 없습니다. 다시 입력해 주세요.");
-                    selectProduct();
-                    
-                    break;
+                    selectQuatity(resultMap);
+                }
             }
-            
-            selectQuatity(resultMap);
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -121,7 +130,7 @@ public class OrderController {
         
         if(productType.equals(Const.PRODUCT_TYPE.KLASS.name())) {
             cartList.addKlassToCart(productMap);
-            productList();
+            selectProduct();
             
         } else {
         
@@ -132,34 +141,80 @@ public class OrderController {
             if(!StringUtil.isNumeric(inputValue)) {
                 System.out.println("수량을 다시 입력해 주세요.");
                 selectQuatity(productMap);
+            } else {
+            
+                //재고, 구매 수 체크
+                int inputQty = Integer.parseInt(inputValue);
+                int beforeQty = cartList.getOrderQtyByProductNum(productMap.getString("num"));
+                
+                if(beforeQty >= hasQty) {
+                    //재고 수가 없을 시
+                    System.out.println("재고 수량 : " + hasQty + " / 카트에 담긴 주문 수 : " + beforeQty);
+                    System.out.println("재고 수량이 부족합니다. 다른 상품을 선택해 주세요.");
+                    
+                    sc.nextLine();
+                    selectProduct();
+                } else if(inputQty + beforeQty > hasQty) {
+                    //재고 보다 많이 주문 시
+                    System.out.println("재고 수량 : " + hasQty + " / 카트에 담긴 주문 수 : " + beforeQty + " / 현재 주문 수 : " + inputQty);
+                    System.out.println("재고 수량이 부족합니다. 다시 입력해주세요.");
+                    selectQuatity(productMap);
+                } else {
+                    productMap.put("orderQty", inputValue);
+                    cartList.addKitToCart(productMap);
+                    
+                    sc.nextLine();
+                    selectProduct();
+                }
+                
             }
-            
-            //재고보다 구매량이 많을 시
-            int inputQty = Integer.parseInt(inputValue);
-            int beforeQty = cartList.getOrderQtyByProductNum(productMap.getString("num"));
-            
-            //재고 수가 없을 시
-            if(beforeQty >= hasQty) {
-                System.out.println("재고 수량 : " + hasQty + " / 카트에 담긴 주문 수 : " + beforeQty);
-                System.out.println("재고 수량이 부족합니다. 다른 상품을 선택해 주세요.");
-                selectProduct();
-            }
-            
-            //재고 보다 많이 주문 시
-            if(inputQty + beforeQty > hasQty) {
-                System.out.println("재고 수량 : " + hasQty + " / 카트에 담긴 주문 수 : " + beforeQty + " / 현재 주문 수 : " + inputQty);
-                System.out.println("재고 수량이 부족합니다. 다시 입력해주세요.");
-                selectQuatity(productMap);
-            }
-            
-            productMap.put("orderQty", inputValue);
-            cartList.addKitToCart(productMap);
-            selectProduct();
             
         }
     }
     
+    //결제 기능
+    @SuppressWarnings("unchecked")
     public void payment() {
+        ExHashMap cartMap = cartList.getCartMap();
         
+        try {
+            int updateResult = orderService.updateProductQty(cartMap);
+            
+            if (updateResult == Const.ERROR_CODE.SUCCESS) {
+                int totalPrice = 0;
+                int price = cartList.getTotalPrice();
+                int shippingCost = cartList.getShippingCost();
+                boolean isShippingCost = cartList.isShippingCost();
+                List<String> orderInfoArray = cartList.getOrderInfoArray();
+                
+                System.out.println("주문 내역:");
+                System.out.println("----------------------------------------------");
+                for (String item : orderInfoArray) {
+                    System.out.println(item);
+                }
+                System.out.println("----------------------------------------------");
+                
+                System.out.println("주문금액: " + StringUtil.getDecimalKRW(price));
+                
+                if(isShippingCost) {
+                    System.out.println("배송비: " + StringUtil.getDecimalKRW(shippingCost));
+                    totalPrice += shippingCost;
+                }
+                System.out.println("----------------------------------------------");
+                
+                totalPrice += price;
+                
+                System.out.println("지불금액: " + StringUtil.getDecimalKRW(totalPrice));
+                System.out.println("----------------------------------------------");
+                System.out.println("");
+                
+                initOrder();
+                
+            }
+            
+        } catch (Exception e) {
+            //System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
