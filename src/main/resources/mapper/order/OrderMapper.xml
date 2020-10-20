@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Order">
+
+    <sql id="sqlWhereCommon">
+        <where>
+            use_yn = 'Y'
+        </where>
+    </sql>
+    
+    <sql id="pagingLimitOffset">
+        <if test="length != null">
+            LIMIT ${length}
+        </if>
+        <if test="start != null">
+            OFFSET ${start}
+        </if>
+    </sql>
+    
+    <sql id="sqlWhereBannerList">
+        <where>
+            banner_group = #{banner_group}
+            <if test="title != null and !title.equals('')">
+                AND title LIKE CONCAT('%',#{title},'%')
+            </if>
+            <if test="target_user != null and !target_user.equals('') and !target_user.equals('15')">
+                AND target_user NOT IN (15)
+                AND target_user <![CDATA[&]]> ${target_user}
+            </if>
+            <if test="target_user != null and target_user.equals('15')">
+                AND target_user = ${target_user}
+            </if>
+            <if test="target_grade != null and !target_grade.equals('') and target_grade != 3">
+                AND target_grade NOT IN (3)
+                AND target_grade <![CDATA[&]]> ${target_grade}
+            </if>
+            <if test="target_grade != null and target_grade == 3">
+                AND target_grade = ${target_grade}
+            </if>
+            <if test="use_yn != null and !use_yn.equals('')">
+                AND use_yn = #{use_yn}
+            </if>
+        </where>
+    </sql>
+    
+    <!-- 배너 목록 조회 -->
+    <select id="selectProductList" parameterType="ExHashMap" resultType="ExHashMap">
+        SELECT    num
+                , title
+                , price
+                , qty
+        FROM tb_products
+    </select>
+    
+    <!-- 게시판 총 갯수 조회 -->
+    <select id="selectProductInfo" parameterType="ExHashMap" resultType="ExHashMap">
+        SELECT    num
+                , gbn
+                , title
+                , price
+                , qty
+        FROM tb_products
+        WHERE num = #{num}
+    </select>
+    
+    
+    <!-- 배너 오더 수정 -->
+    <update id="updateBannerOrder" parameterType="ExHashMap">
+        UPDATE tb_app_banner
+        <include refid="sqlWhereBannerList" />
+        <set> 
+                  order_no = ${order_no}
+                , upd_id = ${reg_id}
+                , upd_dt = CONVERT_TZ(NOW(),'+00:00','+09:00')
+                , upd_ip = #{reg_ip}
+        </set>
+        WHERE banner_seq = #{update_seq}
+    </update>
+    
+</mapper>
