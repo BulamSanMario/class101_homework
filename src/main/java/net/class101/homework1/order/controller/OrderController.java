@@ -64,8 +64,7 @@ public class OrderController {
                 System.out.println(item);
             }
             
-            sc.nextLine();
-            selectProduct();
+            selectProduct(true);
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -73,12 +72,17 @@ public class OrderController {
     }
     
     //상품 선택
-    public void selectProduct() {
+    public void selectProduct(boolean isScannerNextLine) {
         ExHashMap paramMap = new ExHashMap();
         ExHashMap resultMap;
         int resultCode;
         
         try {
+            //이전 입력값 제거용
+            if(isScannerNextLine) {
+                sc.nextLine();
+            }
+            
             System.out.print("상품번호 : ");
             inputValue = sc.nextLine();
             
@@ -91,7 +95,7 @@ public class OrderController {
                 //상품번호 숫자 체크
                 if(!StringUtil.isNumeric(inputValue)) {
                     System.out.println("상품번호를 다시 입력해 주세요.");
-                    selectProduct();
+                    selectProduct(false);
                 } else {
                 
                     paramMap.put("num", inputValue);
@@ -102,13 +106,13 @@ public class OrderController {
                     switch (resultCode) {
                         case Const.ERROR_CODE.NOT_EXIST_PRODUCT:
                             System.out.println("입력하신 상품번호의 상품이 없습니다. 다시 입력해 주세요.");
-                            selectProduct();
+                            selectProduct(false);
                             
                             break;
                             
                         case Const.ERROR_CODE.NOT_EXIST_QTY:
                             System.out.println("해당 상품 재고가 없습니다. 다시 입력해 주세요.");
-                            selectProduct();
+                            selectProduct(false);
                             
                             break;
                     }
@@ -130,7 +134,7 @@ public class OrderController {
         
         if(productType.equals(Const.PRODUCT_TYPE.KLASS.name())) {
             cartList.addKlassToCart(productMap);
-            selectProduct();
+            selectProduct(false);
             
         } else {
         
@@ -152,8 +156,7 @@ public class OrderController {
                     System.out.println("재고 수량 : " + hasQty + " / 카트에 담긴 주문 수 : " + beforeQty);
                     System.out.println("재고 수량이 부족합니다. 다른 상품을 선택해 주세요.");
                     
-                    sc.nextLine();
-                    selectProduct();
+                    selectProduct(true);
                 } else if(inputQty + beforeQty > hasQty) {
                     //재고 보다 많이 주문 시
                     System.out.println("재고 수량 : " + hasQty + " / 카트에 담긴 주문 수 : " + beforeQty + " / 현재 주문 수 : " + inputQty);
@@ -163,8 +166,7 @@ public class OrderController {
                     productMap.put("orderQty", inputValue);
                     cartList.addKitToCart(productMap);
                     
-                    sc.nextLine();
-                    selectProduct();
+                    selectProduct(true);
                 }
                 
             }
