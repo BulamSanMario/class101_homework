@@ -1,6 +1,7 @@
 package net.class101.homework1.order.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import java.util.List;
 
@@ -8,6 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+
+import net.class101.homework1.common.util.Const;
+import net.class101.homework1.common.util.ExHashMap;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -30,12 +34,34 @@ class OrderServiceImplTest {
                 .isNotEmpty()
                 .contains(firstProduct)
                 .doesNotContainNull()
-                .containsSequence(secondProduct, thirdProduct);
+                .containsSequence(secondProduct, thirdProduct)
+                .hasSize(20);
             
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
-
+    
+    @Test
+    public void testSelectProductInfo() {
+        
+        try {
+            ExHashMap paramMap = new ExHashMap();
+            paramMap.put("num", 39712);
+            ExHashMap resultMap = orderService.selectProductInfo(paramMap);
+            
+            assertThat(resultMap)
+                .isNotEmpty()
+                .contains(
+                        entry("gbn", Const.PRODUCT_TYPE.KIT.name()),
+                        entry("num", 39712),
+                        entry("qty", 8),
+                        entry("title", "집에서 느끼는 겨울의 묵직한 포근함, 플랜테리어 아이템"),
+                        entry("resultCode", Const.ERROR_CODE.SUCCESS));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
 }
